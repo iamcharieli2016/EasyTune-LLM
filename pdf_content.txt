@@ -1,0 +1,423 @@
+ 
+EasyTune-LLM：意图驱动的傻瓜式大模型微
+调平台架构设计报告 
+ 
+ 
+I. 执行摘要与平台愿景 
+ 
+EasyTune-LLM 平台的诞生旨在系统性地解决大模型微调过程中普遍存在的复杂度高、环境依赖
+重以及部署迁移困难等核心痛点。当前的大模型微调过程，即使是采用 Parameter-Efficient 
+Fine-Tuning (PEFT) 方法如 LoRA，仍需要用户手动配置数十个相互影响的超参数，这对非专业机
+器学习工程师构成了实质性的技术壁垒。 
+EasyTune-LLM 平台致力于在复杂技术与用户友好体验之间建立一个高级抽象层，将底层技术细
+节转化为基于用户“意图”的自动化预设。 
+ 
+I.1 平台愿景与核心价值主张 
+ 
+本平台的核心价值在于提供卓越的易用性、高性能和企业级的安全治理，特别针对需要私有化部
+署和轻量级运行环境的客户。 
+1.​ 极致简化 (Idiot-Proof UX): 通过意图驱动的配置向导，将复杂的超参数配置抽象化。平台
+目标是实现“丝滑”体验，使用户只需具备基本的大模型理论知识和机器学习概念即可高效地
+微调出所需的模型 1。 
+2.​ 轻量与高移植性 (Lightweight & Portable): 平台架构基于 PEFT 和容器化原则构建，确保
+训练和部署的资源消耗最小化。训练后的模型可以高效地导出并轻松迁移到各种硬件环境，
+从高性能 GPU 集群到本地 AI PC 2。 
+3.​ 高安全私有化 (Secure Private Deployment): 通过采用微服务和高级 API 网关设计，平台
+确保数据和微调后的模型资产在客户的私有环境中得到最高级别的治理和保护 5。 
+ 
+I.2 报告目标与架构基石 
+
+ 
+本报告详细提供了 EasyTune-LLM 平台的三大核心设计文档：产品设计与用户体验规范（模块 A
+）、技术平台架构设计文档（模块 B）和核心技术详细设计文档（模块 C）。这些文档共同构成了平台
+实施的蓝图。 
+ 
+II. 模块 A: 产品设计与用户体验规范 (Product Design & 
+UX Specification) 
+ 
+EasyTune-LLM 的产品核心是“意图驱动”，即用户只需清晰表达对模型的期望和目标，平台则自
+动完成所有必要的底层复杂性配置。 
+ 
+A.1 UX/UI 设计原则：简化复杂性 
+ 
+平台的界面设计必须遵循 AI 驱动的 SaaS 平台设计原则，以实现大气、简单、操作容易的体验 1。
+配色方案应采用专业 AI 工具推荐的高对比度深色模式，以体现高科技感和极简主义风格 6。 
+ 
+A.1.1 清晰与极简主义 
+ 
+平台界面应避免使用过多的功能或数据点来干扰用户，隐藏所有非必需或高级的超参数。这种设
+计哲学旨在将用户的注意力集中在核心任务上，大幅降低新用户的认知负荷 1。 
+ 
+A.1.2 解释性与透明性 
+ 
+即使平台自动选择默认值，也必须建立用户信任。平台会为所有自动配置的参数（如 LoRA 秩 、学
+习率）提供上下文相关的解释性悬浮窗或提示，向用户解释 AI 做出此配置选择的依据和潜在影
+响。这种透明度能够弥合技术复杂性和用户需求之间的差距 1。 
+ 
+
+A.1.3 人性化设计与适应性 
+ 
+平台通过提供“配置向导”，将技术参数抽象为业务或任务目标。例如，不是询问用户选择 ，而是
+询问“您希望注入多少新的领域知识？”这种人性化的流程确保了与用户工作流的对齐。同时，平
+台支持适应性设计，根据用户在配置向导中选择的任务难度自动调整底层配置，并提供一个“专家
+模式”开关，以适应不同专业水平的用户群体 1。 
+ 
+A.2 傻瓜式用户旅程：极简四步流程 
+ 
+用户在 EasyTune-LLM 上的微调流程被精简为以下四个核心步骤： 
+1.​ 步骤 1: 选择基座模型与数据： 平台必须提供灵活的模型接入能力，支持本地上传、私有模
+型库或公共模型 Hub 的模型 8。数据处理环节支持拖拽式导入，并提供自动格式校验和预处
+理建议，确保输入数据的质量和格式符合微调要求。 
+2.​ 步骤 2: 意图驱动式配置： 这是平台的核心创新点。用户无需直接面对复杂的超参数，只需回
+答两个关键业务问题：任务类型（例如：指令微调、知识注入）和效果要求/复杂度（低、中、
+高）。平台根据这些业务意图，自动在后台配置数十个底层 LoRA 参数，包括 、、目标模块和
+学习率。 
+3.​ 步骤 3: 实时监控与反馈： 平台提供一个精简且高度可视化的仪表板。除了标准的训练进度
+和损失指标外，关键是引入“模型健康”指标，例如灾难性遗忘分数 (CF Score)。如果训练出
+现过拟合或知识遗忘的迹象，平台会立即提供清晰的非技术性警告 9。 
+4.​ 步骤 4: 导出与部署： 训练完成后，平台自动将轻量级的 LoRA 权重与基座模型合并。平台提
+供多种导出选项，包括针对边缘设备优化的格式，如 OpenVINO™ 格式和 INT4 量化，以保证
+模型在轻量级硬件上运行的高效性和可移植性 4。 
+ 
+A.3 LoRA 参数抽象与配置向导的工程化实现 
+ 
+实现“傻瓜式”配置的关键在于将资深 LLM 架构师的经验固化为一套鲁棒的默认预设。这种配置
+旨在实现性能与易用性的最佳平衡。 
+在底层 LoRA 配置中，平台将一个重要的经验法则内化：在 LoRA 调优中，对学习率 (LR) 的优化应
+优先于调整秩 () 和 Alpha () 10。通过预设合理的 LR 范围并结合自动 LR 调度器，平台替用户承担
+了 LR 调优的风险和难度。 
+平台根据任务复杂度和用户意图自动选择以下参数组合： 
+
+LoRA 超参数工程化配置指南 (EasyTune-LLM 默认预设) 
+ 
+用户选择：
+任务复杂度 
+意图描述 
+(用户视角) 
+自动配置：
+Rank () 
+自动配置：
+Alpha () 
+目标模块 
+(Target 
+Modules) 
+默认学习率 
+(LR) 
+低 (L1): 基
+础风格调整 
+改变语气或
+格式，无需
+注入新知
+识。 
+4 - 8 
+ 
+Attention 
+QKV Layers 
+Only 11 
+ 
+中 (L2): 领
+域知识注入 
+适配特定领
+域词汇，进
+行简单QA任
+务。 
+8 - 16 
+ to  
+All Attention 
++ FFN 
+Layers 12 
+ 
+高 (L3): 复
+杂指令重塑 
+提升复杂指
+令遵循能
+力、代码生
+成等。 
+16 - 32 
+ to  
+All Attention 
++ FFN 
+Layers 13 
+ 
+平台的设计考量是，如果用户追求最佳的微调性能，默认应激活所有主要的 Transformer 模块（
+QKV 和 FFN）12。这是因为 FFN 层具有更高的参数容量和非线性激活能力，在复杂的推理和知识
+处理中扮演核心角色 13。因此，在 L2 和 L3 等高复杂度任务中，平台将自动启用 FFN 层的 LoRA 
+调整，确保性能潜力最大化。 
+ 
+A.4 实时反馈与失败模式的透明化 
+ 
+EasyTune-LLM 提供“解释性”的反馈，即使是训练失败或性能下降，用户也能理解原因并获得可
+操作的建议。 
+ 
+A.4.1 损失曲线的智能解读 
+ 
+平台提供交互式的训练和验证损失曲线可视化 9。如果观察到训练损失持续下降而验证损失开始
+上升，这通常表明模型正在过拟合或开始遗忘基础知识。平台会立即弹出非技术性的警告，例如
+
+：“模型似乎开始专注于新数据，可能正在遗忘基础知识。建议尝试启用知识保留模式或降低学习
+率。” 
+ 
+A.4.2 灾难性遗忘分数 (CF Score) 可视化 
+ 
+为了将抽象的“遗忘”概念量化，平台实时计算并展示 CF Score。该分数基于微调模型与基座模型
+在通用基准任务上的交叉熵损失来衡量知识遗忘的程度 14。高分表明对原始预训练知识的损害越
+严重。持续在仪表板上展示此分数 15，使用户能够即时评估微调对模型通用能力的潜在损害，从
+而在任务性能和通用性之间做出知情的权衡。 
+ 
+III. 模块 B: 技术平台架构设计文档 (Technical Platform 
+Architecture Design Document) 
+ 
+平台架构的设计目标是实现轻量级、高移植性和强大的私有部署安全性。这通过采用标准的微服
+务架构和容器化技术得以实现 3。 
+ 
+B.1 总体架构与微服务划分 
+ 
+EasyTune-LLM 采用微服务架构，所有组件均通过 Docker 或 Podman 进行容器化部署。这种设
+计确保了环境轻量级、一致性高，并且极易通过 Docker Compose 或 Helm Chart 实现一键式部
+署 3。 
+ 
+核心服务组件： 
+ 
+1.​ API 网关/安全服务 (AGS): 作为平台的统一接入点，负责实施身份验证、基于角色的访问控
+制 (RBAC)、实时速率限制以及所有安全策略，形成平台的第一道信任边界 5。 
+2.​ UX/可视化服务 (UVS): 承载前端界面和实时指标推送服务，确保用户界面的流畅交互和实
+时数据更新。 
+3.​ 模型管理服务 (MMS): 负责预训练模型的存储、版本控制，特别是管理轻量级的 LoRA 权重
+资产 16。 
+
+4.​ 任务调度服务 (TSS): 管理和分配训练任务，确保资源高效利用，并将任务发送至训练计算服
+务。 
+5.​ 训练计算服务 (TCS): 核心 PEFT 训练引擎，实际执行模型微调计算。 
+ 
+部署与环境要求 
+ 
+平台的设计专注于最小化环境依赖，主要要求包括 Linux 操作系统（或 Windows/MacOS 上的容
+器环境）和兼容的硬件加速卡驱动（如 CUDA 或针对 Intel 平台的 OpenVINO™）。 
+ 
+B.2 高移植性与跨硬件迁移方案 
+ 
+高移植性是 EasyTune-LLM 针对私有化和边缘部署环境的关键优势。PEFT 方法本身就为模型部
+署带来了效率上的颠覆，因为只需要传输和加载极小的 LoRA 权重文件（通常只有几 MB），而不
+是整个大型模型。 
+ 
+训练与部署的解耦 
+ 
+1.​ 训练环境标准化: TCS 容器内部预装了 PEFT 2 和 Hugging Face Accelerate 16，统一了所有
+训练依赖，确保在不同硬件加速卡上训练的一致性。 
+2.​ 训练后优化与导出: 训练完成后，平台会自动将轻量级的 LoRA 权重与基座模型合并。随后，
+自动启动“优化导出”流水线。平台集成 Intel OpenVINO™ Toolkit 或 Hugging Face 
+Optimum 等技术栈 4，执行 Weight Compression (INT4/INT8 量化)。这种优化极大地减少
+了模型体积和内存占用，确保微调后的模型能够高效、无缝地迁移到资源受限的本地 AI PC 
+或其他边缘计算设备上进行推理 4。 
+ 
+B.3 私有化治理与安全架构 
+ 
+在私有部署环境中，平台必须实现强大的数据治理、隐私保护和模型安全。 
+ 
+
+API 网关作为信任层 
+ 
+AGS 服务在安全架构中扮演核心角色，它不仅路由流量，更是一层信任管理。AGS 必须实施细粒
+度的基于角色的访问控制 (RBAC) 5，确保用户和自动化 LLM Agent 只能访问其授权的数据集和
+微调任务。此外，所有数据在传输过程中必须通过 TLS/SSL 加密，并且平台强烈推荐客户使用 
+AWS Private Link 等私有网络连接方式，将内部流量与公共互联网隔离，进一步强化数据隐私 17。 
+ 
+PEFT 特定安全威胁应对 
+ 
+平台必须前瞻性地应对 PEFT 框架中特有的安全威胁。研究表明，“PEFT-as-an-Attack (PaaA)”
+是一种新型威胁，恶意 LoRA 权重可以被用作攻击向量，绕过预训练模型原有的安全对齐，从而生
+成有害内容 18。 
+为了缓解此威胁，EasyTune-LLM 采取以下策略： 
+●​ 安全审计: 在 MMS 服务中，对所有上传和训练完成的 LoRA 权重进行严格的版本控制和上传
+校验。 
+●​ Post-PEFT Safety Alignment (PPSA): 在模型合并并准备部署之前，自动运行 PPSA 流程 
+18。该流程通过一套针对性测试集检查模型是否被恶意 LoRA 权重绕过了安全过滤器。这种机
+制要求在最终部署前对模型安全性进行验证，尽管这可能以轻微牺牲目标任务准确性为代价
+，但对于企业级私有环境中的模型安全对齐至关重要 18。 
+ 
+IV. 模块 C: 核心技术详细设计文档 (Core Technical 
+Detailed Design Document) 
+ 
+本模块详细阐述 EasyTune-LLM 平台如何将 LoRA 的理论基础转化为鲁棒且自动化的工程实现，
+以确保“傻瓜式”体验背后的专业性。 
+ 
+C.1 PEFT 引擎选型与架构 
+ 
+ 
+
+C.1.1 核心技术栈 
+ 
+训练计算服务 (TCS) 的核心基于 PyTorch 框架，并深度整合了 Hugging Face 生态系统。平台主
+要依赖 PEFT (Parameter-Efficient Fine-Tuning) 库来提供 LoRA 和 QLoRA 等方法的标准化接口 
+2。同时，Hugging Face Accelerate 库被用于处理分布式训练、混合精度计算和跨设备优化，确保
+训练过程的高效性和稳定性 16。 
+ 
+C.1.2 LoRA 权重资产管理 
+ 
+MMS 服务将 LoRA 权重视为独立且可版本控制的资产。由于 LoRA 矩阵 () 仅是基座模型权重  
+的低秩更新，它们体积极小，被视为“任务向量” 15。这种设计使得平台能够以极小的存储和计算成
+本，为同一个基座模型支持无限多的微调任务和多租户应用 16。 
+ 
+C.2 LoRA/QLoRA 深度实现与参数工程化 
+ 
+实现参数工程化的关键在于将复杂的经验法则转化为平台默认值，防止用户输入非最优的超参数
+组合。 
+ 
+C.2.1 秩 () 与 Alpha () 的设计规范 
+ 
+LoRA 的核心在于通过低秩矩阵  和  来近似权重更新 ，并且更新值需要被  除以  进行缩放 19。为
+了确保适应性和防止梯度爆炸，一个重要的工程规范是必须保证  19。 
+EasyTune-LLM 平台采纳了推荐的经验法则，默认采用  的比例进行配置，这被证明能提供平衡的
+性能 10。在“傻瓜式”配置向导中，系统根据用户选择的复杂度自动锁定 ，然后自动计算 ，从而彻
+底消除了用户手动输入这两个参数的必要性。 
+ 
+C.2.2 目标模块选择的鲁棒性 
+ 
+
+对于需要高性能的微调任务，平台必须选择最鲁棒的模块配置。分析显示，在 Transformer Block 
+中，最佳的整体性能通常是通过对所有线性层——包括注意力机制中的 QKV 层、输出层 (O)，以
+及前馈网络 (FFN) 中的两层——应用 LoRA 来实现的 12。 
+平台将此配置固化为 L2/L3 任务的默认值，即  模块。这是因为 FFN 层在模型中具备最大的参数
+容量，主要负责知识存储和复杂的非线性推理 13。通过默认启用这些关键模块，平台确保了即使
+是简单配置，也能最大化模型的适应性和任务性能。 
+ 
+C.3 灾难性遗忘与知识保留机制 
+ 
+缓解灾难性遗忘 (Catastrophic Forgetting, CF) 是确保微调质量和模型长期稳定性的核心挑战 11
+。 
+ 
+C.3.1 遗忘监测的工程化 
+ 
+如前所述，平台通过实时计算 CF Score（微调模型与基座模型预测之间的交叉熵损失）来实现遗
+忘监测 14。平台可以配置预警阈值。一旦 CF Score 曲线快速上升或超过预定阈值，系统即自动触
+发警告，甚至可以暂停训练或建议切换到知识保留模式。 
+ 
+C.3.2 持续学习与高级缓解策略 
+ 
+对于需要模型长期演进或顺序处理多任务的企业应用，EasyTune-LLM 提供了先进的持续学习方
+案。平台支持集成正交约束 LoRA (C-LoRA 或 O-LoRA) 20。 
+●​ 原理: C-LoRA 通过引入正交约束，确保新的任务更新（新的 LoRA 矩阵）与先前任务的知识
+子空间保持正交和独立 21。 
+●​ 平台集成: 在“专家模式”或专门的“持续学习”任务类型中提供 C-LoRA 选项。这种方法通过
+隔离任务知识，有效避免了灾难性遗忘和不同任务间的相互干扰 20，为平台提供了强大的多
+任务扩展能力和鲁棒性。 
+ 
+C.4 模型合并与质量保障 
+
+ 
+训练产物的最终交付流程必须确保质量和安全性。 
+ 
+模型合并 
+ 
+平台利用 LoRA 的合并公式  15，将训练后的低秩矩阵自动融合到基座模型中，生成一个可用于推
+理的最终权重文件。这一过程对用户是完全透明的。 
+ 
+安全对齐与 PaaA 缓解 
+ 
+在模型合并后，安全保障流程自动启动。平台通过执行 PPSA 流程来应对 PaaA 攻击风险 18。
+PPSA 通过一套专门设计的测试集来验证微调后的模型是否维持了原始的安全对齐。虽然 PPSA 
+可能会略微牺牲目标任务的准确性，但这种工程上的权衡对于确保私有环境中 LLM 的行为安全
+是不可或缺的 18。 
+ 
+V. 结论与未来演进路线 
+ 
+EasyTune-LLM 平台成功地将资深 LLM 架构师的专业知识内化为一套自动化、高效率和高安全
+性的微调系统。通过在 LoRA/QLoRA 的基础上构建“意图驱动”的抽象层，平台打破了传统 LLM 
+微调的技术壁垒，实现了对用户承诺的极致易用性。 
+ 
+V.1 平台优势总结 
+ 
+1.​ 产品易用性: 核心在于意图驱动的配置，将复杂的超参数转化为 L1/L2/L3 等业务复杂度选择
+，并提供透明的灾难性遗忘 (CF) 监控 1。 
+2.​ 技术高效性: 架构基于 PEFT 和 QLoRA 2，确保了训练的高参数效率，同时通过集成 C-LoRA 
+等先进方法，为持续学习场景提供了鲁棒的解决方案 20。 
+3.​ 部署与安全: 采用容器化微服务架构，支持 OpenVINO/INT4 优化，确保跨硬件平台的无缝迁
+移 3。同时，通过 API 网关治理和 PPSA 机制，保障了私有化部署环境下的数据和模型安全 5
+
+。 
+ 
+V.2 长期演进路线 
+ 
+为了保持平台的领先地位和适应不断变化的 AI 需求，EasyTune-LLM 规划了以下长期演进方向： 
+1.​ 动态 PEFT 集成: 探索和整合如 AdaLoRA 和 DyLoRA 等动态低秩适应技术 22，实现训练过程
+中 LoRA 秩  的动态调整。这将进一步优化资源利用，并根据任务需求自适应地调整模型容
+量。 
+2.​ 强化学习与用户反馈闭环: 建立基于用户交互反馈（例如隐式的“满意度”信号或显式的“喜爱
+/不喜爱”反应）的奖励模型 23。这将允许平台将微调过程与实际生产环境中的用户满意度挂
+钩，实现对微调模型的持续、自动化优化。 
+3.​ 联邦学习支持: 研究并集成 FedPEFT (Federated Parameter-Efficient Fine-Tuning) 方案 18，
+支持在数据不出本地的前提下进行 PEFT 训练，从而为对数据隐私有极高要求的客户提供更
+强的解决方案。 
+引用的著作 
+1.​ Making Complex AI Simple: UX Design for SaaS Platforms - F1Studioz, 访问时间为 
+十月 9, 2025， 
+https://f1studioz.com/blog/making-complex-ai-simple-ux-design-for-saas-platfor
+ms/ 
+2.​ PEFT - Hugging Face, 访问时间为 十月 9, 2025， 
+https://huggingface.co/docs/peft/en/index 
+3.​ (PDF) Private Microservice with Retrieval-Augmented Generation and Embedded 
+LLM, 访问时间为 十月 9, 2025， 
+https://www.researchgate.net/publication/396021231_Private_Microservice_with_
+Retrieval-Augmented_Generation_and_Embedded_LLM 
+4.​ Bring Optimized AI Models to AI PC with OpenVINO™ Toolkit - Intel, 访问时间为 十
+月 9, 2025， 
+https://www.intel.com/content/www/us/en/developer/articles/community/ai-model
+s-from-gaudi-to-ai-pc-using-openvino.html 
+5.​ AI Gateways & Data Governance: Scaling Trustworthy LLM Agents - 
+DreamFactory Blog, 访问时间为 十月 9, 2025， 
+https://blog.dreamfactory.com/ai-gateways-data-governance-scaling-trustworth
+y-llm-agents 
+6.​ Huemint - AI color palette generator, 访问时间为 十月 9, 2025， 
+https://huemint.com/ 
+7.​ Khroma - AI Color Tool for Designers | Discover and Save Color Palettes, 访问时间
+为 十月 9, 2025， https://www.khroma.co/ 
+8.​ The Ultimate Guide to Fine-Tuning LLMs from Basics to Breakthroughs: An 
+
+Exhaustive Review of Technologies, Research, Best Practices, Applied Research 
+Challenges and Opportunities (Version 1.0) - arXiv, 访问时间为 十月 9, 2025， 
+https://arxiv.org/html/2408.13296v1 
+9.​ LLM Fine Tuning: What Constitutes A “Good” Loss Value? | by Sol Farahmand | 
+Medium, 访问时间为 十月 9, 2025， 
+https://medium.com/@sol.farahmand1986/llm-fine-tuning-what-constitutes-a-go
+od-loss-value-7ddea3138762 
+10.​Efficient LLM Fine-tuning with LoRA | by Sulbha Jain | Sep, 2025 | Medium, 访问时
+间为 十月 9, 2025， 
+https://medium.com/@sulbha.jindal/efficient-llm-fine-tuning-with-lora-0f650497
+da8c 
+11.​Efficient Fine-Tuning of Large Language Models with LoRA and QLoRA - Medium, 
+访问时间为 十月 9, 2025， 
+https://medium.com/@mksupriya2/efficient-fine-tuning-of-large-language-mode
+ls-with-lora-and-qlora-4770f5e497bd 
+12.​Recurrent Knowledge Identification and Fusion for Language Model Continual 
+Learning, 访问时间为 十月 9, 2025， https://arxiv.org/html/2502.17510v1 
+13.​[P] Practical Tips for Finetuning LLMs Using LoRA (Low-Rank Adaptation): Things I 
+Learned From Hundreds of Experiments - Reddit, 访问时间为 十月 9, 2025， 
+https://www.reddit.com/r/MachineLearning/comments/17z82pc/p_practical_tips_f
+or_finetuning_llms_using_lora/ 
+14.​Scaling Laws for Forgetting When Fine-Tuning Large Language Models - arXiv, 访
+问时间为 十月 9, 2025， https://arxiv.org/html/2401.05605v1 
+15.​Mitigating Catastrophic Forgetting in Large Language Models with 
+Forgetting-aware Pruning | OpenReview, 访问时间为 十月 9, 2025， 
+https://openreview.net/forum?id=fHvh913U1H 
+16.​Parameter-Efficient Fine-Tuning using PEFT - Hugging Face, 访问时间为 十月 9, 
+2025， https://huggingface.co/blog/peft 
+17.​Security & Compliance - Hugging Face, 访问时间为 十月 9, 2025， 
+https://huggingface.co/docs/inference-endpoints/security 
+18.​PEFT-as-an-Attack! Jailbreaking Language Models during Federated 
+Parameter-Efficient Fine-Tuning - arXiv, 访问时间为 十月 9, 2025， 
+https://arxiv.org/html/2411.19335v2 
+19.​LoRA Hyperparameters Guide | Unsloth Documentation, 访问时间为 十月 9, 2025
+， 
+https://docs.unsloth.ai/get-started/fine-tuning-llms-guide/lora-hyperparameters-
+guide 
+20.​C-LoRA: Continual Low-Rank Adaptation for Pre-trained Models - arXiv, 访问时间
+为 十月 9, 2025， https://arxiv.org/html/2502.17920v1 
+21.​Orthogonal Low-rank Adaptation in Lie Groups for Continual Learning of Large 
+Language Models - arXiv, 访问时间为 十月 9, 2025， 
+https://arxiv.org/html/2509.06100v1 
+22.​Sensitivity-LoRA : Low-Load Sensitivity-Based Fine-Tuning for Large Language 
+Models - arXiv, 访问时间为 十月 9, 2025， https://arxiv.org/html/2509.09119v1 
+23.​Reinforcement Learning from User Feedback - arXiv, 访问时间为 十月 9, 2025， 
+
+https://arxiv.org/html/2505.14946v1 
+

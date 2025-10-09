@@ -1,0 +1,63 @@
+/**
+ * 创建任务页面样式
+ */
+
+.create-task-container {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.step-content {
+  min-height: 400px;
+  padding: 24px 0;
+}
+
+.steps-action {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.complexity-card {
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 2px solid #f0f0f0;
+}
+
+.complexity-card:hover {
+  border-color: #1890ff;
+  box-shadow: 0 4px 16px rgba(24, 144, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+.complexity-card.selected {
+  border-color: #1890ff;
+  background: linear-gradient(135deg, rgba(24, 144, 255, 0.05) 0%, rgba(24, 144, 255, 0.1) 100%);
+  box-shadow: 0 4px 16px rgba(24, 144, 255, 0.3);
+}
+
+.complexity-icon {
+  font-size: 48px;
+  line-height: 1;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .step-content {
+    min-height: 300px;
+    padding: 16px 0;
+  }
+
+  .complexity-icon {
+    font-size: 32px;
+  }
+
+  .steps-action {
+    flex-direction: column;
+  }
+
+  .steps-action button {
+    width: 100%;
+  }
+}
+

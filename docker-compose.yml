@@ -1,0 +1,117 @@
+version: '3.8'
+
+services:
+  # PostgreSQL数据库
+  postgres:
+    image: postgres:15-alpine
+    container_name: easytune-postgres
+    environment:
+      POSTGRES_USER: easytune
+      POSTGRES_PASSWORD: easytune
+      POSTGRES_DB: easytune_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U easytune"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - easytune-network
+
+  # Redis缓存
+  redis:
+    image: redis:7-alpine
+    container_name: easytune-redis
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - easytune-network
+
+  # API Gateway
+  api-gateway:
+    build:
+      context: ./backend
+      dockerfile: ../deployment/docker/Dockerfile.gateway
+    container_name: easytune-gateway
+    environment:
+      - DATABASE_URL=postgresql://easytune:easytune@postgres:5432/easytune_db
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - SECRET_KEY=your-production-secret-key-change-this
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app/backend
+      - ./uploads:/app/uploads
+      - ./models:/app/models
+    networks:
+      - easytune-network
+    restart: unless-stopped
+
+  # Training Engine
+  training-engine:
+    build:
+      context: ./training-engine
+      dockerfile: ../deployment/docker/Dockerfile.training
+    container_name: easytune-training
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    volumes:
+      - ./training-engine:/app
+      - ./models:/app/models
+      - ./uploads:/app/uploads
+      - ./cache:/app/cache
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    depends_on:
+      - redis
+    networks:
+      - easytune-network
+    restart: unless-stopped
+
+  # Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: ../deployment/docker/Dockerfile.frontend
+    container_name: easytune-frontend
+    environment:
+      - REACT_APP_API_URL=http://localhost:8000/api/v1
+    ports:
+      - "3000:80"
+    depends_on:
+      - api-gateway
+    networks:
+      - easytune-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  easytune-network:
+    driver: bridge
+
