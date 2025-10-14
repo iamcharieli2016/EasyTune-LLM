@@ -18,11 +18,9 @@ import {
 import {
   ThunderboltOutlined,
   CheckCircleOutlined,
-  CloseCircleOutlined,
   ClockCircleOutlined,
   DatabaseOutlined,
   CloudUploadOutlined,
-  UserOutlined,
   ArrowRightOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
@@ -30,7 +28,7 @@ import ReactECharts from 'echarts-for-react';
 import { taskApi } from '../services/api';
 import { DashboardStats, Task, TaskStatus } from '../types';
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -39,12 +37,21 @@ const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadDashboardData();
+    loadDashboardData(true); // 首次加载显示loading
+    
+    // 自动刷新（每10秒，不显示loading）
+    const interval = setInterval(() => {
+      loadDashboardData(false);
+    }, 10000);
+    
+    return () => clearInterval(interval);
   }, []);
 
-  const loadDashboardData = async () => {
+  const loadDashboardData = async (showLoading = true) => {
     try {
-      setLoading(true);
+      if (showLoading) {
+        setLoading(true);
+      }
       const [statsData, tasksData] = await Promise.all([
         taskApi.getStats(),
         taskApi.getTasks(1, 5),
@@ -54,7 +61,9 @@ const Dashboard: React.FC = () => {
     } catch (error) {
       console.error('Failed to load dashboard data:', error);
     } finally {
-      setLoading(false);
+      if (showLoading) {
+        setLoading(false);
+      }
     }
   };
 

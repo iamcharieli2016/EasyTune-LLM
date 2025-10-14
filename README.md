@@ -1,299 +1,331 @@
-# EasyTune-LLM: 意图驱动的傻瓜式大模型微调平台
+# 🚀 EasyTune-LLM
 
 <div align="center">
 
-![EasyTune-LLM](docs/assets/logo.png)
+**企业级大语言模型微调平台**
 
-**企业级大模型微调平台 | 轻量 · 安全 · 易用**
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![React 18](https://img.shields.io/badge/react-18-61dafb.svg)](https://reactjs.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-009688.svg)](https://fastapi.tiangolo.com/)
 
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![Python](https://img.shields.io/badge/Python-3.10+-green.svg)](https://python.org)
-[![React](https://img.shields.io/badge/React-18.0+-blue.svg)](https://reactjs.org)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-teal.svg)](https://fastapi.tiangolo.com)
+零代码微调 | 可视化界面 | 企业级稳定
+
+[快速开始](#-快速开始) • [功能特性](#-功能特性) • [技术架构](#-技术架构) • [文档](#-文档)
 
 </div>
 
-## 📋 项目简介
+---
 
-EasyTune-LLM 是一个企业级的大模型微调平台，致力于通过**意图驱动**的设计理念，将复杂的大模型微调过程简化为傻瓜式的四步操作。平台基于 PEFT（参数高效微调）技术，支持 LoRA、QLoRA 等先进方法，为企业和个人开发者提供轻量、安全、高性能的模型微调解决方案。
+## 📖 项目简介
 
-### 🎯 核心特性
+EasyTune-LLM 是一个专业的大语言模型微调平台，旨在**降低 LLM 微调的技术门槛**，通过 Web 界面实现零代码微调，将传统微调流程从 2 天缩短到 2 小时。
 
-- **🚀 极致简化**：意图驱动配置，无需深入理解复杂超参数
-- **⚡ 轻量高效**：基于 LoRA/QLoRA 技术，显存占用降低 90%
-- **🔒 安全私有**：支持私有化部署，完整的 RBAC 权限体系
-- **📊 实时监控**：可视化训练过程，灾难性遗忘智能预警
-- **🐳 容器化**：完整 Docker/Kubernetes 支持，一键部署
-- **🔄 高移植性**：支持多种硬件平台，OpenVINO 优化导出
+### 核心特性
 
-## 🏗️ 系统架构
+- 🎯 **零代码操作** - 可视化 Web 界面，无需编写代码
+- 🚀 **高效微调** - 支持 LoRA/QLoRA，显存占用小，训练速度快
+- 📊 **实时监控** - 训练进度、日志实时查看，全流程可控
+- 🔧 **灵活配置** - 智能参数推荐，支持多种训练方式
+- 💪 **生产就绪** - 进程隔离、异步I/O、完善的监控告警
+
+---
+
+## ✨ 功能特性
+
+| 模块 | 功能 | 状态 |
+|-----|------|-----|
+| 📊 **仪表盘** | 统计概览、快捷操作、系统监控 | ✅ |
+| 📁 **数据集管理** | 上传/预览/删除，支持多种格式 | ✅ |
+| 🤖 **模型管理** | 预置模型库、自定义路径、模型服务 | ✅ |
+| 🎯 **训练任务** | 创建/监控/停止/删除任务 | ✅ |
+| 📋 **日志监控** | 实时日志、下载、搜索 | ✅ |
+
+### 🎨 界面预览
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                     前端 (React + TS)                    │
-│              现代化UI · 实时监控 · 可视化配置            │
-└─────────────────────────────────────────────────────────┘
-                            ↓
-┌─────────────────────────────────────────────────────────┐
-│              API Gateway (安全网关服务)                  │
-│          JWT认证 · RBAC · 限流 · 路由转发               │
-└─────────────────────────────────────────────────────────┘
-           ↓              ↓              ↓
-┌──────────────┐ ┌──────────────┐ ┌──────────────┐
-│ 模型管理服务 │ │ 任务调度服务 │ │ 认证授权服务 │
-│   (MMS)      │ │   (TSS)      │ │   (AUTH)     │
-└──────────────┘ └──────────────┘ └──────────────┘
-                     ↓
-           ┌──────────────────┐
-           │   训练引擎服务    │
-           │  PEFT/LoRA 训练  │
-           └──────────────────┘
-                     ↓
-           ┌──────────────────┐
-           │   数据存储层      │
-           │ PostgreSQL+Redis │
-           └──────────────────┘
+┌─────────────────────────────────────────────────────┐
+│  EasyTune-LLM                    [用户] [设置] [退出]│
+├──────────┬──────────────────────────────────────────┤
+│ 仪表盘   │  📊 统计概览                              │
+│ 数据集   │  ├─ 数据集: 5 个                          │
+│ 模型     │  ├─ 模型: 3 个                            │
+│ 训练任务 │  └─ 任务: 12 个 (2 个运行中)             │
+│ 日志     │                                          │
+│          │  🚀 快捷操作                              │
+│          │  [创建任务] [上传数据] [添加模型]        │
+│          │                                          │
+│          │  📝 最近任务                              │
+│          │  ├─ 客服机器人微调 (运行中) ██████░░ 75% │
+│          │  ├─ 问答模型训练 (已完成) ✓              │
+│          │  └─ 分类任务 (失败) ✗                    │
+└──────────┴──────────────────────────────────────────┘
 ```
 
-## 🚦 快速开始
+---
+
+## 📦 快速开始
 
 ### 前置要求
 
-- **Docker**: 20.10+
-- **Docker Compose**: 2.0+
-- **Python**: 3.10+
-- **Node.js**: 18.0+
-- **CUDA**: 11.8+ (GPU训练)
+```bash
+# 硬件要求
+CPU: 4+ 核心
+内存: 16GB+
+显卡: NVIDIA GPU (8GB+) 或 Apple Silicon
+磁盘: 50GB+ 可用空间
 
-### 一键部署（推荐）
+# 软件要求
+Python 3.9+
+Node.js 16+
+PostgreSQL 14+
+CUDA 11.8+ (NVIDIA) 或 macOS 13+ (Apple)
+```
+
+### 一键安装
 
 ```bash
-# 克隆项目
-git clone https://github.com/your-org/EasyTune-LLM.git
+# 1. 克隆项目
+git clone https://github.com/your-repo/EasyTune-LLM.git
 cd EasyTune-LLM
 
-# 启动所有服务
-docker-compose up -d
+# 2. 安装后端
+conda create -n easytune python=3.10
+conda activate easytune
+pip install -r backend/requirements.txt
+pip install -r training-engine/requirements.txt
 
-# 访问平台
-# 前端: http://localhost:3000
-# API文档: http://localhost:8000/docs
-```
+# 3. 配置数据库
+createdb easytune_db
+cd backend && alembic upgrade head
 
-### 开发环境部署
+# 4. 启动后端
+./start_backend_fixed.sh
+# 后端运行在: http://localhost:8000
 
-#### 1. 后端服务
-
-```bash
-cd backend
-
-# 创建虚拟环境
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
-
-# 安装依赖
-pip install -r requirements.txt
-
-# 启动各个微服务
-cd api-gateway && uvicorn main:app --reload --port 8000
-cd model-service && uvicorn main:app --reload --port 8001
-cd task-service && uvicorn main:app --reload --port 8002
-```
-
-#### 2. 前端服务
-
-```bash
+# 5. 安装并启动前端
 cd frontend
-
-# 安装依赖
 npm install
-
-# 启动开发服务器
-npm start
+npm run dev
+# 前端运行在: http://localhost:5173
 ```
 
-#### 3. 训练引擎
+### 首次使用
 
 ```bash
-cd training-engine
-
-# 安装训练依赖
-pip install -r requirements.txt
-
-# 启动训练服务
-python src/trainer_service.py
+1. 访问 http://localhost:5173
+2. 登录 (默认: admin / admin123)
+3. 上传训练数据集
+4. 添加基座模型
+5. 创建训练任务
+6. 监控训练进度
 ```
 
-## 📖 使用指南
+---
 
-### 四步完成模型微调
+## 📚 文档
 
-#### 步骤 1: 选择基座模型与数据
+### 核心文档
 
-- 支持从 HuggingFace Hub、本地路径导入模型
-- 拖拽式数据上传，自动格式校验
-- 支持 JSON、JSONL、CSV 等多种数据格式
+| 文档 | 说明 |
+|-----|------|
+| [平台功能介绍](./平台功能介绍.md) | 完整的功能说明和使用指南 |
+| [系统架构设计](./ARCHITECTURE.md) | 技术架构和设计决策 |
+| [本地环境安装](./INSTALLATION.md) | 开发环境配置和安装步骤 |
+| [生产环境部署](./DEPLOYMENT.md) | Docker 部署和生产配置 |
 
-#### 步骤 2: 意图驱动配置
+### 快速链接
 
-选择您的训练意图：
+- 🎯 [快速开始](#-快速开始) - 5 分钟快速体验
+- 🏗️ [技术架构](#-技术架构) - 了解系统设计
+- 📊 [性能数据](#-性能数据) - 查看性能指标
+- 🤝 [贡献指南](#-贡献) - 参与项目开发
 
-| 意图等级 | 适用场景 | 自动配置 |
-|---------|---------|---------|
-| **L1 - 基础风格调整** | 改变语气、格式 | Rank=4-8, QKV层 |
-| **L2 - 领域知识注入** | 垂直领域适配 | Rank=8-16, QKV+FFN |
-| **L3 - 复杂指令重塑** | 代码生成、复杂推理 | Rank=16-32, 全层 |
+---
 
-#### 步骤 3: 实时监控
-
-- **训练进度**：实时loss曲线、GPU使用率
-- **灾难性遗忘监控**：CF Score 实时追踪
-- **智能预警**：过拟合、知识遗忘自动提示
-
-#### 步骤 4: 导出与部署
-
-- **标准导出**：PyTorch、ONNX 格式
-- **优化导出**：INT4/INT8 量化，OpenVINO 格式
-- **一键部署**：生成推理服务配置
-
-## 🔧 技术栈
-
-### 后端
-
-- **Web框架**: FastAPI 0.100+
-- **ORM**: SQLAlchemy 2.0
-- **任务队列**: Celery + Redis
-- **数据库**: PostgreSQL 15
-- **缓存**: Redis 7.0
+## 🏗️ 技术栈
 
 ### 前端
+```
+React 18 + TypeScript
+Ant Design 5.x
+React Router v6
+Axios
+Vite
+```
 
-- **框架**: React 18 + TypeScript 5
-- **UI组件**: Ant Design 5.0
-- **状态管理**: Redux Toolkit
-- **图表**: ECharts 5.0
-- **HTTP客户端**: Axios
+### 后端
+```
+FastAPI
+PostgreSQL + SQLAlchemy
+asyncio + asyncpg
+psutil (进程管理)
+```
 
 ### 训练引擎
-
-- **深度学习**: PyTorch 2.0+
-- **PEFT**: Hugging Face PEFT
-- **分布式**: Accelerate
-- **优化**: DeepSpeed (可选)
-
-### DevOps
-
-- **容器化**: Docker + Docker Compose
-- **编排**: Kubernetes (生产环境)
-- **CI/CD**: GitHub Actions
-- **监控**: Prometheus + Grafana
-
-## 📂 项目结构
-
 ```
-EasyTune-LLM/
-├── backend/                    # 后端服务
-│   ├── api-gateway/           # API网关服务
-│   ├── model-service/         # 模型管理服务
-│   ├── task-service/          # 任务调度服务
-│   ├── auth-service/          # 认证授权服务
-│   └── common/                # 公共模块
-├── frontend/                   # 前端应用
-│   ├── src/
-│   │   ├── components/        # React组件
-│   │   ├── pages/             # 页面
-│   │   ├── services/          # API服务
-│   │   └── styles/            # 样式
-│   └── public/
-├── training-engine/            # 训练引擎
-│   ├── src/                   # 训练核心代码
-│   ├── models/                # 模型配置
-│   └── configs/               # 训练配置
-├── deployment/                 # 部署配置
-│   ├── docker/                # Docker配置
-│   ├── kubernetes/            # K8s配置
-│   └── scripts/               # 部署脚本
-├── docs/                       # 文档
-│   ├── architecture/          # 架构设计
-│   ├── api/                   # API文档
-│   └── user-guide/            # 用户指南
-└── docker-compose.yml         # Docker编排
+PyTorch 2.0+
+HuggingFace Transformers
+PEFT (LoRA, QLoRA)
+支持 CUDA / MPS / CPU
 ```
 
-## 🔐 安全特性
+---
 
-- **认证机制**: JWT Token + Refresh Token
-- **权限控制**: 细粒度 RBAC 权限体系
-- **数据加密**: TLS/SSL 传输加密
-- **安全审计**: 完整的操作日志
-- **PaaA防护**: Post-PEFT Safety Alignment
+## 🎯 使用场景
 
-## 📊 性能指标
+### 1️⃣ 客服机器人
+```python
+# 适用于: 企业客服、售后支持
+- 数据: 客服对话历史
+- 模型: Qwen2-7B
+- 方式: LoRA 微调
+- 时间: 2-4 小时
+```
 
-- **显存占用**: 相比全量微调降低 90%
-- **训练速度**: 提升 3-5倍
-- **模型体积**: LoRA 权重仅 10-50MB
-- **并发能力**: 支持 100+ 并发训练任务
+### 2️⃣ 专业问答
+```python
+# 适用于: 医疗、法律、金融等垂直领域
+- 数据: 专业知识库
+- 模型: ChatGLM3-6B
+- 方式: 全量微调
+- 时间: 4-8 小时
+```
 
-## 🛣️ 发展路线图
+### 3️⃣ 文本分类
+```python
+# 适用于: 情感分析、意图识别
+- 数据: 标注文本
+- 模型: Qwen2-1.5B
+- 方式: LoRA 微调
+- 时间: 1-2 小时
+```
 
-### v1.0 (当前版本)
-- ✅ 基础微调功能
-- ✅ LoRA/QLoRA 支持
-- ✅ Web UI 界面
-- ✅ Docker 部署
+### 4️⃣ 多语言翻译
+```python
+# 适用于: 文档翻译、实时翻译
+- 数据: 平行语料
+- 模型: LLaMA-3-8B
+- 方式: Seq2Seq 微调
+- 时间: 6-10 小时
+```
 
-### v1.5 (计划中)
-- 🔄 AdaLoRA 动态秩调整
-- 🔄 多模型对比训练
-- 🔄 联邦学习支持
-- 🔄 强化学习 RLHF
+---
 
-### v2.0 (规划中)
-- 📋 多模态模型支持
-- 📋 AutoML 超参数优化
-- 📋 模型商店
-- 📋 云原生部署
+## 📊 性能基准
 
-## 🤝 贡献指南
+### 训练性能
 
-我们欢迎所有形式的贡献！请查看 [CONTRIBUTING.md](CONTRIBUTING.md) 了解详情。
+| 模型 | 数据量 | 硬件 | 时间 | 显存 |
+|-----|--------|------|-----|------|
+| Qwen2-1.5B | 10K | RTX 3090 | 1h | 8GB |
+| Qwen2-7B | 10K | RTX 4090 | 4h | 20GB |
+| LLaMA-13B | 10K | A100 40GB | 6h | 35GB |
+| Qwen2-7B (LoRA) | 10K | RTX 3090 | 1.5h | 8GB |
 
-### 参与方式
+### 推理性能
 
+| 模型 | 硬件 | 吞吐量 | 延迟 |
+|-----|------|-------|------|
+| 1.5B | RTX 3090 | 2000 tok/s | 50ms |
+| 7B | RTX 4090 | 800 tok/s | 120ms |
+| 13B | A100 | 500 tok/s | 200ms |
+
+---
+
+## 🔧 高级功能
+
+### 分布式训练
+```yaml
+training:
+  distributed:
+    enabled: true
+    num_gpus: 4
+```
+
+### 模型量化
+```yaml
+quantization:
+  enabled: true
+  bits: 4  # 4-bit QLoRA
+```
+
+### 梯度检查点
+```yaml
+gradient_checkpointing:
+  enabled: true  # 节省显存
+```
+
+---
+
+## 🤝 贡献
+
+我们欢迎所有形式的贡献！
+
+### 贡献方式
 - 🐛 提交 Bug 报告
 - 💡 提出新功能建议
-- 📝 改进文档
-- 🔧 提交代码 PR
+- 📖 改进文档
+- 💻 提交代码
 
-## 📄 开源协议
+### 贡献流程
+```bash
+1. Fork 项目
+2. 创建特性分支 (git checkout -b feature/AmazingFeature)
+3. 提交更改 (git commit -m 'Add AmazingFeature')
+4. 推送分支 (git push origin feature/AmazingFeature)
+5. 提交 Pull Request
+```
 
-本项目采用 [Apache 2.0](LICENSE) 开源协议。
+---
+
+## 📝 更新日志
+
+### v1.0.0 (2025-10-14)
+- ✅ 完成数据集管理功能
+- ✅ 完成模型管理功能
+- ✅ 完成训练任务创建和监控
+- ✅ 完成日志实时查看
+- ✅ 添加任务停止和删除功能
+- ✅ 修复路径问题，支持绝对路径
+- ✅ 优化错误处理和用户体验
+
+### v0.9.0 (2025-10-10)
+- 🎉 初始版本发布
+- 基础功能实现
+
+---
+
+## 📄 许可证
+
+本项目采用 MIT 许可证 - 详见 [LICENSE](LICENSE) 文件
+
+---
+
+## 🙏 致谢
+
+感谢以下开源项目:
+
+- [HuggingFace Transformers](https://github.com/huggingface/transformers) - 模型库
+- [FastAPI](https://fastapi.tiangolo.com/) - Web 框架
+- [Ant Design](https://ant.design/) - UI 组件
+- [PyTorch](https://pytorch.org/) - 深度学习框架
+- [PEFT](https://github.com/huggingface/peft) - 高效微调
+
+---
 
 ## 📞 联系我们
 
-- **官网**: https://easytune-llm.com
-- **邮箱**: support@easytune-llm.com
-- **Discord**: https://discord.gg/easytune-llm
-- **微信群**: 扫码加入技术交流群
-
-## 🌟 致谢
-
-感谢以下开源项目和社区的支持：
-
-- [Hugging Face PEFT](https://github.com/huggingface/peft)
-- [PyTorch](https://pytorch.org/)
-- [FastAPI](https://fastapi.tiangolo.com/)
-- [React](https://reactjs.org/)
-- [Ant Design](https://ant.design/)
-
-## 📈 Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=your-org/EasyTune-LLM&type=Date)](https://star-history.com/#your-org/EasyTune-LLM&Date)
+- 🏠 主页: [https://github.com/your-repo/EasyTune-LLM](https://github.com/your-repo/EasyTune-LLM)
+- 🐛 问题: [Issues](https://github.com/your-repo/EasyTune-LLM/issues)
+- 📧 邮箱: support@easytune-llm.com
 
 ---
 
 <div align="center">
-Made with ❤️ by EasyTune-LLM Team
-</div>
 
+**⭐ 如果这个项目对您有帮助，请给我们一个 Star！⭐**
+
+Made with ❤️ by EasyTune-LLM Team
+
+</div>

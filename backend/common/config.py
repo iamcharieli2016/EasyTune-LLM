@@ -40,20 +40,40 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     
     # CORS配置
-    CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://127.0.0.1:3000"]
+    CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://127.0.0.1:3000", "*"]
     CORS_ALLOW_CREDENTIALS: bool = True
     CORS_ALLOW_METHODS: List[str] = ["*"]
     CORS_ALLOW_HEADERS: List[str] = ["*"]
     
     # 文件上传配置
-    UPLOAD_DIR: str = "./uploads"
+    # 使用绝对路径，避免相对路径导致的问题
+    @property
+    def UPLOAD_DIR(self) -> str:
+        from pathlib import Path
+        # 获取项目根目录（backend的父目录）
+        project_root = Path(__file__).parent.parent.parent
+        return str(project_root / "uploads")
+    
+    @property
+    def MODELS_DIR(self) -> str:
+        from pathlib import Path
+        project_root = Path(__file__).parent.parent.parent
+        return str(project_root / "models")
+    
+    @property
+    def LORA_ADAPTERS_DIR(self) -> str:
+        from pathlib import Path
+        project_root = Path(__file__).parent.parent.parent
+        return str(project_root / "lora_adapters")
+    
+    @property
+    def CACHE_DIR(self) -> str:
+        from pathlib import Path
+        project_root = Path(__file__).parent.parent.parent
+        return str(project_root / "cache")
+    
     MAX_UPLOAD_SIZE: int = 1024 * 1024 * 1024  # 1GB
     ALLOWED_EXTENSIONS: List[str] = ["json", "jsonl", "csv", "txt"]
-    
-    # 模型配置
-    MODELS_DIR: str = "./models"
-    LORA_ADAPTERS_DIR: str = "./lora_adapters"
-    CACHE_DIR: str = "./cache"
     
     # 训练配置
     MAX_CONCURRENT_TASKS: int = 5

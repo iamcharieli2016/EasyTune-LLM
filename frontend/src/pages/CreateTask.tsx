@@ -30,6 +30,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { modelApi, datasetApi, taskApi } from '../services/api';
 import { Model, Dataset, TaskComplexity, TaskCreate } from '../types';
+import { formatApiError } from '../utils/errorHandler';
 import './CreateTask.css';
 
 const { Step } = Steps;
@@ -122,24 +123,34 @@ const CreateTask: React.FC = () => {
   const handleSubmit = async () => {
     try {
       setLoading(true);
-      const values = await form.validateFields();
+      
+      // 获取所有字段值（包括隐藏的步骤）
+      const allValues = form.getFieldsValue(true);
+      console.log('📊 表单所有值:', allValues);
+      
+      // 验证必填字段
+      await form.validateFields();
       
       const taskData: TaskCreate = {
-        task_name: values.task_name,
-        description: values.description,
-        task_complexity: values.task_complexity,
-        task_intent: values.task_intent,
-        base_model_id: values.base_model_id,
-        dataset_id: values.dataset_id,
-        output_model_name: values.output_model_name,
-        num_epochs: values.num_epochs || 3,
+        task_name: allValues.task_name,
+        description: allValues.description,
+        task_complexity: allValues.task_complexity,
+        task_intent: allValues.task_intent,
+        base_model_id: allValues.base_model_id,
+        dataset_id: allValues.dataset_id,
+        output_model_name: allValues.output_model_name,
+        num_epochs: allValues.num_epochs || 3,
       };
+
+      console.log('📤 提交的任务数据:', taskData);
 
       const task = await taskApi.createTask(taskData);
       message.success('任务创建成功！');
       navigate(`/tasks/${task.id}`);
     } catch (error: any) {
-      message.error(error.response?.data?.detail || '任务创建失败');
+      const errorMsg = formatApiError(error, '任务创建失败');
+      message.error(errorMsg);
+      console.error('创建任务失败:', error.response?.data);
     } finally {
       setLoading(false);
     }
@@ -180,7 +191,12 @@ const CreateTask: React.FC = () => {
           ))}
         </Steps>
 
-        <Form form={form} layout="vertical" initialValues={{ task_complexity: TaskComplexity.L2_DOMAIN, num_epochs: 3 }}>
+        <Form 
+          form={form} 
+          layout="vertical" 
+          preserve={true}
+          initialValues={{ task_complexity: TaskComplexity.L2_DOMAIN, num_epochs: 3 }}
+        >
           {/* 步骤1：选择模型与数据 */}
           {current === 0 && (
             <div className="step-content">

@@ -12,7 +12,6 @@ import {
   Model,
   ModelCreate,
   Dataset,
-  DatasetCreate,
   Task,
   TaskCreate,
   DashboardStats,
@@ -185,6 +184,13 @@ export const datasetApi = {
   },
 
   // 上传数据集
+  upload: async (formData: FormData): Promise<ApiResponse<Dataset>> => {
+    const response = await api.post<ApiResponse<Dataset>>('/datasets/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  },
+
   uploadDataset: async (
     file: File,
     name: string,
@@ -212,6 +218,11 @@ export const datasetApi = {
   },
 
   // 删除数据集
+  delete: async (id: number): Promise<ApiResponse> => {
+    const response = await api.delete<ApiResponse>(`/datasets/${id}`);
+    return response.data;
+  },
+
   deleteDataset: async (id: number): Promise<ApiResponse> => {
     const response = await api.delete<ApiResponse>(`/datasets/${id}`);
     return response.data;
@@ -258,8 +269,24 @@ export const taskApi = {
   },
 
   // 删除任务
-  deleteTask: async (id: number): Promise<ApiResponse> => {
-    const response = await api.delete<ApiResponse>(`/tasks/${id}`);
+  deleteTask: async (id: number, force: boolean = false): Promise<ApiResponse> => {
+    const response = await api.delete<ApiResponse>(`/tasks/${id}`, {
+      params: { force }
+    });
+    return response.data;
+  },
+  
+  // 停止任务
+  stopTask: async (id: number, force: boolean = false): Promise<ApiResponse> => {
+    const response = await api.post<ApiResponse>(`/tasks/${id}/stop`, null, {
+      params: { force }
+    });
+    return response.data;
+  },
+  
+  // 获取任务进程状态
+  getTaskProcess: async (id: number): Promise<any> => {
+    const response = await api.get<any>(`/tasks/${id}/process`);
     return response.data;
   },
 

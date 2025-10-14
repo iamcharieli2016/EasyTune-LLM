@@ -37,13 +37,13 @@ limiter = Limiter(key_func=get_remote_address)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-# 配置CORS
+# 配置CORS - 允许所有来源（开发环境）
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
-    allow_credentials=settings.CORS_ALLOW_CREDENTIALS,
-    allow_methods=settings.CORS_ALLOW_METHODS,
-    allow_headers=settings.CORS_ALLOW_HEADERS,
+    allow_origins=["*"],  # 开发环境允许所有来源
+    allow_credentials=False,  # 允许所有来源时必须为False
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # 信任主机中间件
@@ -150,13 +150,16 @@ async def proxy_request(
 
 # ==================== 认证路由 ====================
 
-from backend.api_gateway.routers import auth, models, tasks, datasets, users
+from routers import auth, models, tasks, datasets, users, model_service, logs, tasks_management
 
 app.include_router(auth.router, prefix=f"{settings.API_PREFIX}/auth", tags=["认证"])
 app.include_router(users.router, prefix=f"{settings.API_PREFIX}/users", tags=["用户管理"])
 app.include_router(models.router, prefix=f"{settings.API_PREFIX}/models", tags=["模型管理"])
+app.include_router(model_service.router, prefix=f"{settings.API_PREFIX}/model-service", tags=["模型服务"])
 app.include_router(datasets.router, prefix=f"{settings.API_PREFIX}/datasets", tags=["数据集管理"])
 app.include_router(tasks.router, prefix=f"{settings.API_PREFIX}/tasks", tags=["任务管理"])
+app.include_router(tasks_management.router, prefix=f"{settings.API_PREFIX}/tasks", tags=["任务操作"])
+app.include_router(logs.router, prefix=f"{settings.API_PREFIX}/logs", tags=["训练日志"])
 
 
 # ==================== 错误处理 ====================

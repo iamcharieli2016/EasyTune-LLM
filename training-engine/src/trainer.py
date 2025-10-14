@@ -1,6 +1,7 @@
 """
 训练引擎核心模块
 基于PEFT/LoRA的模型微调
+支持多平台：CUDA (NVIDIA), MPS (Apple Silicon), CPU
 """
 
 import torch
@@ -20,12 +21,99 @@ from peft import (
 from datasets import load_dataset
 import json
 import os
+import platform
 from typing import Dict, Any, Optional, Callable
 from dataclasses import dataclass
 import logging
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+def get_device_info() -> Dict[str, Any]:
+    """
+    自动检测当前系统的计算设备
+    支持 CUDA (NVIDIA GPU), MPS (Apple Silicon), CPU
+    
+    Returns:
+        dict: 包含设备类型、设备名称、可用性等信息
+    """
+    device_info = {
+        "platform": platform.system(),
+        "machine": platform.machine(),
+        "device": "cpu",
+        "device_name": "CPU",
+        "available": True,
+        "cuda_available": False,
+        "mps_available": False,
+        "device_count": 0,
+    }
+    
+    # 检测CUDA (NVIDIA GPU)
+    if torch.cuda.is_available():
+        device_info.update({
+            "device": "cuda",
+            "device_name": torch.cuda.get_device_name(0),
+            "cuda_available": True,
+            "device_count": torch.cuda.device_count(),
+            "cuda_version": torch.version.cuda,
+        })
+        logger.info(f"✅ 检测到 NVIDIA GPU: {device_info['device_name']}")
+        logger.info(f"   GPU数量: {device_info['device_count']}")
+        logger.info(f"   CUDA版本: {device_info['cuda_version']}")
+    
+    # 检测MPS (Apple Silicon)
+    elif hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
+        device_info.update({
+            "device": "mps",
+            "device_name": "Apple Silicon (MPS)",
+            "mps_available": True,
+        })
+        logger.info(f"✅ 检测到 Apple Silicon GPU (MPS)")
+        logger.info(f"   系统: {device_info['platform']} {device_info['machine']}")
+    
+    # 回退到CPU
+    else:
+        logger.warning("⚠️  未检测到GPU，将使用CPU进行训练")
+        logger.warning("   训练速度会较慢，建议使用GPU")
+    
+    return device_info
+
+
+def get_optimal_device() -> str:
+    """
+    获取最优计算设备
+    优先级: CUDA > MPS > CPU
+    
+    Returns:
+        str: 设备字符串 ("cuda", "mps", "cpu")
+    """
+    device_info = get_device_info()
+    return device_info["device"]
+
+
+def get_torch_dtype(device: str) -> torch.dtype:
+    """
+    根据设备类型获取最优的数据类型
+    
+    Args:
+        device: 设备类型 ("cuda", "mps", "cpu")
+    
+    Returns:
+        torch.dtype: 推荐的数据类型
+    """
+    if device == "cuda":
+        # CUDA支持float16
+        return torch.float16
+    elif device == "mps":
+        # MPS在某些情况下float16可能有问题，使用float32更稳定
+        # 如果PyTorch版本支持，可以使用bfloat16
+        if torch.backends.mps.is_built():
+            return torch.float32  # MPS目前对float16支持不完全
+        return torch.float32
+    else:
+        # CPU使用float32
+        return torch.float32
 
 
 @dataclass
@@ -56,14 +144,32 @@ class TrainingConfig:
     eval_steps: int = 500
     save_total_limit: int = 3
     
-    # 硬件配置
-    fp16: bool = True
+    # 硬件配置（自动检测）
+    device: str = None  # 自动检测: "cuda", "mps", "cpu"
+    fp16: bool = None   # 自动根据设备设置
     bf16: bool = False
     gradient_checkpointing: bool = True
     
     def __post_init__(self):
         if self.lora_target_modules is None:
             self.lora_target_modules = ["q_proj", "k_proj", "v_proj"]
+        
+        # 自动检测设备
+        if self.device is None:
+            self.device = get_optimal_device()
+            logger.info(f"🔧 自动选择计算设备: {self.device.upper()}")
+        
+        # 根据设备自动配置精度
+        if self.fp16 is None:
+            if self.device == "cuda":
+                self.fp16 = True
+                logger.info("   启用混合精度训练 (FP16)")
+            elif self.device == "mps":
+                self.fp16 = False  # MPS暂不支持FP16
+                logger.info("   使用FP32精度 (MPS)")
+            else:
+                self.fp16 = False
+                logger.info("   使用FP32精度 (CPU)")
 
 
 class LoRATrainer:
@@ -77,8 +183,8 @@ class LoRATrainer:
         self.trainer = None
         
     def load_model_and_tokenizer(self):
-        """加载模型和分词器"""
-        logger.info(f"Loading model: {self.config.model_name_or_path}")
+        """加载模型和分词器（支持多平台）"""
+        logger.info(f"📦 加载模型: {self.config.model_name_or_path}")
         
         # 加载分词器
         self.tokenizer = AutoTokenizer.from_pretrained(
@@ -91,19 +197,40 @@ class LoRATrainer:
         if self.tokenizer.pad_token is None:
             self.tokenizer.pad_token = self.tokenizer.eos_token
         
+        # 根据设备选择合适的数据类型和加载策略
+        torch_dtype = get_torch_dtype(self.config.device)
+        
+        # 设备映射策略
+        if self.config.device == "cuda":
+            device_map = "auto"  # CUDA支持自动分配
+        elif self.config.device == "mps":
+            device_map = None    # MPS需要手动管理
+        else:
+            device_map = None    # CPU
+        
+        logger.info(f"   数据类型: {torch_dtype}")
+        logger.info(f"   设备映射: {device_map if device_map else 'manual'}")
+        
         # 加载模型
         self.model = AutoModelForCausalLM.from_pretrained(
             self.config.model_name_or_path,
             trust_remote_code=True,
-            torch_dtype=torch.float16 if self.config.fp16 else torch.float32,
-            device_map="auto"
+            torch_dtype=torch_dtype,
+            device_map=device_map,
+            low_cpu_mem_usage=True
         )
+        
+        # 对于MPS和CPU，手动移动到设备
+        if self.config.device in ["mps", "cpu"]:
+            self.model = self.model.to(self.config.device)
+            logger.info(f"   模型已移动到 {self.config.device.upper()}")
         
         # 启用梯度检查点
         if self.config.gradient_checkpointing:
             self.model.gradient_checkpointing_enable()
+            logger.info("   已启用梯度检查点")
         
-        logger.info("Model and tokenizer loaded successfully")
+        logger.info("✅ 模型和分词器加载成功")
         
     def prepare_peft_model(self):
         """准备PEFT模型"""
@@ -197,8 +324,11 @@ class LoRATrainer:
         return train_dataset, eval_dataset
         
     def create_trainer(self, train_dataset, eval_dataset):
-        """创建训练器"""
-        logger.info("Creating trainer")
+        """创建训练器（支持多平台）"""
+        logger.info("🔨 创建训练器")
+        
+        # 根据设备调整训练参数
+        use_mps_device = self.config.device == "mps"
         
         # 训练参数
         training_args = TrainingArguments(
@@ -208,7 +338,7 @@ class LoRATrainer:
             per_device_eval_batch_size=self.config.per_device_eval_batch_size,
             gradient_accumulation_steps=self.config.gradient_accumulation_steps,
             learning_rate=self.config.learning_rate,
-            fp16=self.config.fp16,
+            fp16=self.config.fp16 and self.config.device == "cuda",  # 仅CUDA支持FP16
             bf16=self.config.bf16,
             warmup_steps=self.config.warmup_steps,
             save_steps=self.config.save_steps,
@@ -221,7 +351,11 @@ class LoRATrainer:
             report_to=["tensorboard"],
             logging_dir=f"{self.config.output_dir}/logs",
             remove_unused_columns=False,
+            use_mps_device=use_mps_device,  # 启用MPS支持
         )
+        
+        logger.info(f"   训练设备: {self.config.device.upper()}")
+        logger.info(f"   混合精度: {'FP16' if training_args.fp16 else 'FP32'}")
         
         # 数据整理器
         data_collator = DataCollatorForLanguageModeling(
@@ -349,17 +483,63 @@ def calculate_catastrophic_forgetting_score(
 
 
 if __name__ == "__main__":
-    # 测试代码
-    config = TrainingConfig(
-        model_name_or_path="meta-llama/Llama-2-7b-hf",
-        dataset_path="./data/train.json",
-        output_dir="./outputs/test_run",
-        lora_rank=8,
-        lora_alpha=16,
-        num_train_epochs=3,
-    )
+    import argparse
+    import sys
     
-    trainer = LoRATrainer(config)
-    result = trainer.run_full_training()
-    print(result)
+    parser = argparse.ArgumentParser(description='LoRA Training Script')
+    parser.add_argument('--config', type=str, help='Path to training config JSON file')
+    parser.add_argument('--task-id', type=int, help='Task ID for tracking')
+    args = parser.parse_args()
+    
+    if args.config:
+        # 从配置文件加载
+        logger.info(f"Loading config from {args.config}")
+        with open(args.config, 'r', encoding='utf-8') as f:
+            config_dict = json.load(f)
+        
+        # 创建训练配置
+        config = TrainingConfig(
+            model_name_or_path=config_dict.get('model_path', 'meta-llama/Llama-2-7b-hf'),
+            dataset_path=config_dict.get('dataset_path', './data/train.json'),
+            output_dir=config_dict.get('output_dir', './outputs/lora_model'),
+            lora_rank=config_dict.get('lora_rank', 8),
+            lora_alpha=config_dict.get('lora_alpha', 16),
+            learning_rate=config_dict.get('learning_rate', 1e-4),
+            num_train_epochs=config_dict.get('num_epochs', 3),
+            per_device_train_batch_size=config_dict.get('batch_size', 4),
+            gradient_accumulation_steps=config_dict.get('gradient_accumulation_steps', 4),
+            warmup_steps=config_dict.get('warmup_steps', 100),
+            logging_steps=config_dict.get('logging_steps', 10),
+            save_steps=config_dict.get('save_steps', 500),
+            lora_target_modules=config_dict.get('lora_target_modules', ["q_proj", "v_proj"]),
+        )
+        
+        logger.info(f"Task ID: {args.task_id}")
+        logger.info(f"Config loaded: model={config.model_name_or_path}, dataset={config.dataset_path}")
+        
+        # 运行训练
+        trainer = LoRATrainer(config)
+        result = trainer.run_full_training()
+        
+        # 输出结果
+        logger.info(f"Training result: {result}")
+        print(json.dumps(result, ensure_ascii=False))
+        
+        # 返回退出码
+        sys.exit(0 if result.get('success', False) else 1)
+    else:
+        # 测试模式（无配置文件）
+        logger.warning("No config file provided, running in test mode")
+        config = TrainingConfig(
+            model_name_or_path="meta-llama/Llama-2-7b-hf",
+            dataset_path="./data/train.json",
+            output_dir="./outputs/test_run",
+            lora_rank=8,
+            lora_alpha=16,
+            num_train_epochs=3,
+        )
+        
+        trainer = LoRATrainer(config)
+        result = trainer.run_full_training()
+        print(json.dumps(result, ensure_ascii=False))
 

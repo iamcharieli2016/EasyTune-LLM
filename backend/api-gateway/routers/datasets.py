@@ -2,7 +2,7 @@
 数据集管理路由
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File, Form
 from sqlalchemy.orm import Session
 from typing import List, Optional
 import os
@@ -130,9 +130,9 @@ async def get_dataset(
 
 @router.post("/upload", response_model=DatasetResponse, status_code=status.HTTP_201_CREATED)
 async def upload_dataset(
-    name: str,
-    description: Optional[str] = None,
-    dataset_type: str = "instruction",
+    name: str = Form(...),
+    description: Optional[str] = Form(None),
+    dataset_type: str = Form("instruction"),
     file: UploadFile = File(...),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)

@@ -31,8 +31,8 @@ fi
 # 检查环境配置文件
 if [ ! -f .env ]; then
     echo -e "${YELLOW}警告: .env文件不存在${NC}"
-    echo "从.env.example创建.env文件..."
-    cp .env.example .env
+    echo "从env.example创建.env文件..."
+    cp env.example .env
     echo -e "${GREEN}.env文件创建成功${NC}"
     echo "请根据需要修改.env文件中的配置"
 fi

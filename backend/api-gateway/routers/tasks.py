@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import datetime
+import logging
 
 from backend.common.database import get_db
 from backend.common.models import User, Task, TaskStatus, Model, Dataset
@@ -17,6 +18,7 @@ from backend.common.auth import get_current_user, check_resource_owner
 from backend.common.config import settings, get_lora_config
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 
 @router.get("/stats", response_model=DashboardStats)
@@ -194,8 +196,14 @@ async def create_task(
     db.commit()
     db.refresh(new_task)
     
-    # TODO: 发送任务到训练队列
-    # send_to_training_queue(new_task.id)
+    # 启动训练任务（后台执行）
+    try:
+        from backend.common.training_runner import start_training_in_background
+        start_training_in_background(new_task.id)
+        logger.info(f"Training task {new_task.id} submitted to background queue")
+    except Exception as e:
+        logger.error(f"Failed to start training: {e}")
+        # 不影响任务创建，任务状态保持PENDING
     
     return new_task
 

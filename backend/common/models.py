@@ -92,6 +92,11 @@ class Model(Base):
     is_public = Column(Boolean, default=False)
     download_count = Column(Integer, default=0)
     
+    # 模型服务配置
+    service_config = Column(JSON)  # 服务配置（下载源、服务类型、API配置等）
+    service_status = Column(String(50))  # 服务状态：not_configured, downloading, ready, running, error
+    service_endpoint = Column(String(500))  # 服务访问端点
+    
     # 所有者和时间
     owner_id = Column(Integer, ForeignKey("users.id"))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
